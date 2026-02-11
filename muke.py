@@ -1,16 +1,23 @@
+
 import os
 import re
 import time
 import math
+import json
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.edge.service import Service
 from selenium.webdriver.common.action_chains import ActionChains
 
+
+# 读取配置
+with open('config.json', 'r', encoding='utf-8') as f:
+    config = json.load(f)
+
 # 启动浏览器
 service = Service(executable_path='msedgedriver.exe')
 driver = webdriver.Edge(service=service)
-driver.get('https://cas.whu.edu.cn/authserver/login?service=https%3A%2F%2Fzhlj.whu.edu.cn%2FcasLogin')
+driver.get(config.get('muke_url', 'https://passport2.chaoxing.com/login?refer=http://i.mooc.chaoxing.com'))
 
 
 
@@ -48,31 +55,17 @@ for x in range(len(jses)):
     # js
     driver.execute_script(jses[x])
     print(driver.current_url)
-    time.sleep(10)#等10秒钟
+    time.sleep(10)  # 等10秒钟
     # Locate the iframe element
     # 两次哦
-    iframe = driver.find_element(By.ID, "iframe") 
+    iframe = driver.find_element(By.ID, "iframe")
     driver.switch_to.frame(iframe)
     try:
         iframe = driver.find_element(By.CLASS_NAME, "ans-attach-online")
     except:
         continue
     driver.switch_to.frame(iframe)
-    '''
-    driver.find_element(By.CLASS_NAME, "vjs-big-play-button").click()
-    time.sleep(4)
-    
-    c_time = driver.find_element(By.CLASS_NAME, "vjs-current-time").text
-    total_time = driver.find_element(By.CLASS_NAME, "vjs-duration-display").text
-    total_time_by_seconds = int(total_time.split(':')[0])*60 + int(total_time.split(':')[1])
-    c_time_by_seconds = int(c_time.split(':')[0])*60 + int(c_time.split(':')[1])
-    time_duration = total_time_by_seconds-c_time_by_seconds
-    print('差'+str(time_duration)+'秒')
-    for x in range(time_duration):
-        time.sleep(1)
-        print('播放'+str(x)+'秒'+' /' + str(time_duration))
-    '''
-    
+    # ...existing code...
     js_code = '''
     const video = document.getElementById('video_html5_api');
     video.play();
@@ -91,10 +84,9 @@ for x in range(len(jses)):
     except:
         pass
 
-
     while True:
         driver.execute_script(js_code)
         time.sleep(3)
         a = driver.execute_script(js_code2)
-        if a <0.01:
+        if a < 0.01:
             break

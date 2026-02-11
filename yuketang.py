@@ -1,14 +1,21 @@
+
 import os
 import time
+import json
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.edge.service import Service
 from selenium.webdriver.common.action_chains import ActionChains
 
+
+# 读取配置
+with open('config.json', 'r', encoding='utf-8') as f:
+    config = json.load(f)
+
 # 启动浏览器
 service = Service(executable_path='msedgedriver.exe')
 driver = webdriver.Edge(service=service)
-driver.get('https://changjiang.yuketang.cn/')
+driver.get(config.get('yuketang_url', 'https://changjiang.yuketang.cn/'))
 
 # 登录
 input('登录之后打开课程，点到成绩单页面后回车继续')
@@ -48,7 +55,7 @@ except:
     pass
 
 original_window_handle = driver.current_window_handle
-x = 4 # 这里设置窗口数量
+x = config.get('yuketang_window_count', 1)  # 从配置读取窗口数量
 
 window_handles = []
 for k in range(x):
