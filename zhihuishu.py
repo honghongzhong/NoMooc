@@ -112,29 +112,71 @@ def filter_catalogs(raw_items):
 
 
 def handle_quiz_dialog(driver):
-	try:
-		dialogs = driver.find_elements(By.CLASS_NAME, "dialog-test")
-		if not dialogs:
+	def try_handle_in_context():
+		try:
+			dialogs = driver.find_elements(By.CLASS_NAME, "el-dialog__wrapper")
+			has_dialog = bool(dialogs)
+		except Exception:
+			has_dialog = False
+		if not has_dialog:
 			return False
-	except Exception:
-		return False
+
+		try:
+			options = driver.find_elements(By.CLASS_NAME, "topic-item")
+			if options:
+				options[0].click()
+				print("弹窗处理: 已点击第一个选项")
+				time.sleep(1)
+			else:
+				print("弹窗处理: 未找到 topic-item")
+		except Exception as exc:
+			print("弹窗处理: 点击选项失败: " + str(exc))
+
+		try:
+			close_btns = driver.find_elements(By.CLASS_NAME, "el-dialog__headerbtn")
+			if close_btns:
+				close_btns[0].click()
+				print("弹窗处理: 已点击关闭按钮")
+				return True
+			print("弹窗处理: 未找到 el-dialog__headerbtn")
+		except Exception as exc:
+			print("弹窗处理: 点击关闭失败: " + str(exc))
+
+		try:
+			footers = driver.find_elements(By.CLASS_NAME, "dialog-footer")
+			if footers:
+				buttons = footers[0].find_elements(By.CLASS_NAME, "btn")
+				if buttons:
+					driver.execute_script("arguments[0].click();", buttons[0])
+					print("弹窗处理: 已点击 footer 按钮")
+					return True
+				print("弹窗处理: 未找到 dialog-footer 内 btn")
+			else:
+				print("弹窗处理: 未找到 dialog-footer")
+		except Exception as exc:
+			print("弹窗处理: 点击 footer 失败: " + str(exc))
+
+		return True
+
+	if try_handle_in_context():
+		return True
 
 	try:
-		options = driver.find_elements(By.CLASS_NAME, "topic-option-item")
-		if options:
-			options[0].click()
-			time.sleep(1)
+		iframes = driver.find_elements(By.TAG_NAME, "iframe")
 	except Exception:
-		pass
+		iframes = []
 
-	try:
-		footers = driver.find_elements(By.CLASS_NAME, "dialog-footer")
-		if footers:
-			footers[0].click()
-			return True
-	except Exception:
-		pass
+	for iframe in iframes:
+		try:
+			driver.switch_to.default_content()
+			driver.switch_to.frame(iframe)
+			if try_handle_in_context():
+				driver.switch_to.default_content()
+				return True
+		except Exception:
+			continue
 
+	driver.switch_to.default_content()
 	return False
 
 
