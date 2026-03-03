@@ -127,10 +127,16 @@ def handle_quiz_dialog(driver):
 				options[0].click()
 				print("弹窗处理: 已点击第一个选项")
 				time.sleep(1)
+				option_clicked = True
 			else:
 				print("弹窗处理: 未找到 topic-item")
+				option_clicked = False
 		except Exception as exc:
 			print("弹窗处理: 点击选项失败: " + str(exc))
+			option_clicked = False
+
+		if not option_clicked:
+			return True
 
 		try:
 			close_btns = driver.find_elements(By.CLASS_NAME, "el-dialog__headerbtn")
@@ -147,7 +153,7 @@ def handle_quiz_dialog(driver):
 			if footers:
 				buttons = footers[0].find_elements(By.CLASS_NAME, "btn")
 				if buttons:
-					driver.execute_script("arguments[0].click();", buttons[0])
+					ActionChains(driver).move_to_element(buttons[0]).click().perform()
 					print("弹窗处理: 已点击 footer 按钮")
 					return True
 				print("弹窗处理: 未找到 dialog-footer 内 btn")
@@ -155,6 +161,47 @@ def handle_quiz_dialog(driver):
 				print("弹窗处理: 未找到 dialog-footer")
 		except Exception as exc:
 			print("弹窗处理: 点击 footer 失败: " + str(exc))
+
+		try:
+			js_find_close = """
+			const root = document.getElementById('playTopic-dialog');
+			if (!root) return null;
+			const divs = root.querySelectorAll('div');
+			for (const d of divs) {
+				if ((d.innerText || '').trim() === '关闭') {
+					return d;
+				}
+			}
+			return null;
+			"""
+			close_el = driver.execute_script(js_find_close)
+			if close_el:
+				try:
+					ActionChains(driver).move_to_element(close_el).click().perform()
+					print("弹窗处理: 已模拟点击 文本=关闭")
+					return True
+				except Exception:
+					pass
+				js_mouse_click = """
+				const el = arguments[0];
+				if (!el) return false;
+				const evt = new MouseEvent('click', {bubbles:true, cancelable:true, view:window});
+				el.dispatchEvent(evt);
+				return true;
+				"""
+				if driver.execute_script(js_mouse_click, close_el):
+					print("弹窗处理: 已触发 MouseEvent 点击关闭")
+					return True
+			print("弹窗处理: 未找到 文本=关闭")
+		except Exception as exc:
+			print("弹窗处理: 点击 文本=关闭 失败: " + str(exc))
+
+		try:
+			with open("zhihuishu_dialog.html", "w", encoding="utf-8") as f:
+				f.write(driver.page_source)
+			print("弹窗处理: 已保存页面到 zhihuishu_dialog.html")
+		except Exception as exc:
+			print("弹窗处理: 保存页面失败: " + str(exc))
 
 		return True
 
